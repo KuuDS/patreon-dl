@@ -1,3 +1,4 @@
+import { type Attachment } from '../entities/Attachment.js';
 import { type Campaign } from '../entities/Campaign.js';
 import { type Downloadable } from '../entities/Downloadable.js';
 import { type MediaItem, type PostCoverImageMediaItem, type PostThumbnailMediaItem, type VideoMediaItem } from '../entities/MediaItem.js';
@@ -122,6 +123,20 @@ export default class PostParser extends Parser {
         audioPreview = downloadables.audio_preview?.[0] || null;
         images = downloadables.images || [];
         attachments = downloadables.attachments || [];
+
+        // 遍历 relationships.media 并检查 includedJSON 中的对象
+        relationships.media.data.forEach((media: any) => {
+          const includedItem = includedJSON.find((item: any) => item.id === media.id);
+          if (includedItem && includedItem.attributes.owner_relationship === 'attachment') {
+            const attachment: Attachment = {
+              type: 'attachment',
+              id: includedItem.id,
+              name: includedItem.attributes.file_name || null,
+              url: includedItem.attributes.download_url || null
+            };
+            attachments.push(attachment);
+          }
+        });
       }
 
       const __getVideoMediaItemFromAttr = (attrJSON: any): VideoMediaItem => {
